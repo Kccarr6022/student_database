@@ -1,10 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Optional, Field
+
+class StudentView(BaseModel):  # Dataclass
+    id: int
+    name: str
+    grade_point_average: float
+    student_email: str
+    internship_name: str
+    begin_date: str
+    end_date: Optional[str]
+    company_name: str
+    company_email: str
+
 
 class Intern(BaseModel):  # Dataclass
     id: int
     name: str
     begin_date: str
-    end_date: str
+    end_date: Optional[str]
     company_id: int
     student_id: int
 

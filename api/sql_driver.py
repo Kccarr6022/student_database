@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 
 class SQLDriver:
@@ -40,6 +40,20 @@ class SQLDriver:
         """
         try:
             self.cursor.execute(sql, params)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print("Problem executing sql:", e)
+            self.conn.rollback()
+        
+    def execute_statements(self, sql: str, params: List[Dict]):
+        """Executes a SQL statement.
+
+        Args:
+            sql (str): The SQL statement to execute.
+            params (Dict): The parameters to use in the SQL statement.
+        """
+        try:
+            self.cursor.executemany(sql, params)
             self.conn.commit()
         except sqlite3.Error as e:
             print("Problem executing sql:", e)

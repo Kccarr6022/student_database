@@ -1,5 +1,5 @@
 from typing import Optional, List
-from api.internship_data_classes import Intern, Company, Student, Tag
+from api.internship_data_classes import StudentView, Intern, Company, Student, Tag
 from api.sql_driver import SQLDriver
 
 
@@ -10,6 +10,17 @@ class InternshipDatabase:
 
     def define_database(self):
         """Executes the raw ddl statements to define the database structure."""
+
+        # Students View
+        self.driver.execute_raw(
+            """
+            CREATE VIEW IF NOT EXISTS student_view AS
+            SELECT student.id, student.name, student.grade_point_average, student.student_email, internship.name AS internship_name, internship.begin_date, internship.end_date, company.name AS company_name, company.company_email
+            FROM student
+            LEFT JOIN internship ON student.id = internship.student_id
+            LEFT JOIN company ON internship.company_id = company.id;
+            """
+        )
 
         # Students table
         self.driver.execute_raw(
@@ -59,6 +70,22 @@ class InternshipDatabase:
             );
             """
         )
+    
+    def get_students_view(self) -> List[StudentView]:
+        """Gets all students.
+
+        Returns:
+            List[StudentView]: The List of students.
+        """
+        sql = "SELECT * FROM student_view"
+        self.driver.execute_raw(sql)
+        tuples = self.driver.cursor.fetchall()
+        return [
+            StudentView(
+                **{field: tuple[i] for i, field in enumerate(StudentView.__fields__.keys())}
+            )
+            for tuple in tuples
+        ]
 
     def get_students(self) -> List[Student]:
         """Gets all projects.
@@ -66,7 +93,7 @@ class InternshipDatabase:
         Returns:
             List[Project]: The List of projects.
         """
-        sql = "SELECT * FROM students"
+        sql = "SELECT * FROM student"
         self.driver.execute_raw(sql)
         tuples = self.driver.cursor.fetchall()
         return [
@@ -98,7 +125,7 @@ class InternshipDatabase:
         Returns:
             List[Company]: The List of companies.
         """
-        sql = "SELECT * FROM companies"
+        sql = "SELECT * FROM company"
         self.driver.execute_raw(sql)
         tuples = self.driver.cursor.fetchall()
         return [
@@ -114,7 +141,7 @@ class InternshipDatabase:
         Returns:
             List[Tag]: The List of tags.
         """
-        sql = "SELECT * FROM tags"
+        sql = "SELECT * FROM tag"
         self.driver.execute_raw(sql)
         tuples = self.driver.cursor.fetchall()
         return [
@@ -226,8 +253,8 @@ class InternshipDatabase:
         """
         self.driver.execute_statement(
             """
-            INSERT INTO interns (name, begin_date, end_date)
-            VALUES (:name, :begin_date, :end_date)
+            INSERT INTO internship (id, name, begin_date, end_date, student_id, company_id)
+            VALUES (:id, :name, :begin_date, :end_date, :student_id, :company_id)
             """,
             intern.dict(),
         )
