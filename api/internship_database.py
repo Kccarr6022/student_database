@@ -1,6 +1,6 @@
 from typing import Optional, List
-from api.internship_data_classes import StudentView, Intern, Company, Student, Tag
-from api.sql_driver import SQLDriver
+from internship_data_classes import StudentView, Intern, Company, Student, Tag
+from sql_driver import SQLDriver
 
 
 class InternshipDatabase:
@@ -70,7 +70,7 @@ class InternshipDatabase:
             );
             """
         )
-    
+
     def get_students_view(self) -> List[StudentView]:
         """Gets all students.
 
@@ -82,7 +82,10 @@ class InternshipDatabase:
         tuples = self.driver.cursor.fetchall()
         return [
             StudentView(
-                **{field: tuple[i] for i, field in enumerate(StudentView.__fields__.keys())}
+                **{
+                    field: tuple[i]
+                    for i, field in enumerate(StudentView.__fields__.keys())
+                }
             )
             for tuple in tuples
         ]
@@ -118,7 +121,7 @@ class InternshipDatabase:
             )
             for tuple in tuples
         ]
-    
+
     def get_companies(self) -> List[Company]:
         """Gets all companies.
 
@@ -145,9 +148,7 @@ class InternshipDatabase:
         self.driver.execute_raw(sql)
         tuples = self.driver.cursor.fetchall()
         return [
-            Tag(
-                **{field: tuple[i] for i, field in enumerate(Tag.__fields__.keys())}
-            )
+            Tag(**{field: tuple[i] for i, field in enumerate(Tag.__fields__.keys())})
             for tuple in tuples
         ]
 
@@ -182,7 +183,7 @@ class InternshipDatabase:
         return Company(
             **{field: tuple[i] for i, field in enumerate(Company.__fields__.keys())}
         )
-    
+
     def get_student_by_id(self, id: int) -> Student:
         """Gets a student by id.
 
@@ -198,7 +199,7 @@ class InternshipDatabase:
         return Student(
             **{field: tuple[i] for i, field in enumerate(Student.__fields__.keys())}
         )
-    
+
     def get_tag_by_id(self, id: int) -> Tag:
         """Gets a tag by id.
 
@@ -211,9 +212,7 @@ class InternshipDatabase:
         sql = "SELECT * FROM tags WHERE id = ?"
         self.driver.execute_statement(sql, params={"id": id})
         tuple = self.driver.cursor.fetchone()
-        return Tag(
-            **{field: tuple[i] for i, field in enumerate(Tag.__fields__.keys())}
-        )
+        return Tag(**{field: tuple[i] for i, field in enumerate(Tag.__fields__.keys())})
 
     def get_intern_by_id(self, id: int) -> Intern:
         """Gets an intern by id.
@@ -258,7 +257,7 @@ class InternshipDatabase:
             """,
             intern.dict(),
         )
-    
+
     def add_tag(self, tag: Tag):
         """Adds a tag.
 
@@ -303,7 +302,7 @@ class InternshipDatabase:
             """,
             intern.dict(),
         )
-    
+
     def update_student(self, student: Student):
         """Updates a student.
 
@@ -336,7 +335,7 @@ class InternshipDatabase:
             """,
             company.dict(),
         )
-    
+
     def update_tag(self, tag: Tag):
         """Updates a tag.
 
@@ -352,7 +351,6 @@ class InternshipDatabase:
             tag.dict(),
         )
 
-
     def delete_student(self, student: Student):
         """Deletes a student.
 
@@ -366,7 +364,7 @@ class InternshipDatabase:
             """,
             student.dict(),
         )
-    
+
     def delete_intern(self, intern: Intern):
         """Deletes an intern.
 
@@ -380,7 +378,7 @@ class InternshipDatabase:
             """,
             intern.dict(),
         )
-    
+
     def delete_company(self, company: Company):
         """Deletes a company.
 
