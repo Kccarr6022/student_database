@@ -1,77 +1,89 @@
-from typing import Optional, List
-from internship_data_classes import StudentView, Intern, Company, Student, Tag
-from sql_driver import SQLDriver
+/* Select from internship table */
+SELECT * FROM internship;
+
+/* Select from internship table under condition */
+
+SELECT * FROM internship WHERE id = 1;
+SELECT * FROM internship WHERE name = 'Software Engineering Intern';
+
+/* Select from view table */
+SELECT * FROM student_view;
+
+/* Select from tag table */
+SELECT * FROM tag;
+
+/* Select from tag table under condition */
+
+SELECT * FROM tag WHERE id = 1; /* Select from tag table under id condition*/
+SELECT * FROM tag WHERE name = 'Java'; /* Select from tag table under name condition*/
+
+/* Select from company table */
+SELECT * FROM company;
+
+/* Select from company table under condition */
+
+SELECT * FROM company WHERE id = 1; /* Select from company table under id condition*/
+SELECT * FROM company WHERE name = 'Google'; /* Select from company table under name condition*/
+
+/* Select from student table */
+SELECT * FROM student;
+
+/* Select from student table under condition */
+
+SELECT * FROM student WHERE id = 1; /* Select from student table under id condition*/
+SELECT * FROM student WHERE name = 'John';
+
+BEGIN TRANSACTION; /* We intend to create a view dataclass and insert an entire view all at once with a transaction */
+
+/* Insert into company table */
+INSERT INTO company (name, company_email) VALUES ('Google', 'google@gmail.com');
+
+/* Insert into student table */
+INSERT INTO student (name, grade_point_average, student_email) VALUES ('John', 3.5, 'johnc421421@eagle.fgcu.edu');
+
+INSERT INTO internship (name, begin_date, end_date, student_id, company_id)
+VALUES ('Software Engineering Intern', '2018-01-01', '2018-05-31', 1, 1);
+
+/* Insert into tag table */
+INSERT INTO tag (name)
+VALUES ('Java');
+
+END TRANSACTION;
+
+/* update internship table */
+UPDATE internship SET name = 'Software Engineering Intern' WHERE id = 1;
+
+/* update tag table */
+UPDATE tag SET name = 'Java' WHERE id = 1;
+
+/* update company table */
+UPDATE company SET name = 'Google', company_email = 'google@gmail.com' WHERE id = 1;
+
+/* update student table */
+UPDATE student SET name = 'John', grade_point_average = 3.5 WHERE id = 1;
 
 
-class InternshipDatabase:
-    def __init__(self, driver: Optional[SQLDriver] = None):
-        self.driver = driver or SQLDriver()
-        self.define_database()
+/* delete from internship table */
+DELETE FROM internship WHERE name = 'Software Engineering Intern';
 
-    def define_database(self):
-        """Executes the raw ddl statements to define the database structure."""
+/* delete from tag table */
+DELETE FROM tag WHERE name = 'Java';
 
-        # Students View
-        self.driver.execute_raw(
-            """
-            CREATE VIEW IF NOT EXISTS student_view AS
-            SELECT student.id, student.name, student.grade_point_average, student.student_email, internship.name AS internship_name, internship.begin_date, internship.end_date, company.name AS company_name, company.company_email
-            FROM student
-            LEFT JOIN internship ON student.id = internship.student_id
-            LEFT JOIN company ON internship.company_id = company.id;
-            """
-        )
+/* delete from company table */
+DELETE FROM company WHERE company_email = 'google@gmail.com';
 
-        # Students table
-        self.driver.execute_raw(
-            """
-            CREATE TABLE IF NOT EXISTS student (
-                id integer PRIMARY KEY AUTOINCREMENT,
-                name varchar(50) NOT NULL,
-                grade_point_average double NOT NULL,
-                student_email varchar(50) NOT NULL
-            );
-            """
-        )
+/* delete from student table */
+DELETE FROM student WHERE name = 'John';
 
-        # Companies table
-        self.driver.execute_raw(
-            """
-            CREATE TABLE IF NOT EXISTS company (
-                id integer PRIMARY KEY AUTOINCREMENT,
-                name varchar(50) NOT NULL,
-                company_email varchar(50) NOT NULL
-            );
-            """
-        )
 
-        # Internships table
-        self.driver.execute_raw(
-            """
-            CREATE TABLE IF NOT EXISTS internship (
-                id integer PRIMARY KEY AUTOINCREMENT,
-                name varchar(50) NOT NULL,
-                begin_date datetime NOT NULL,
-                end_date datetime NOT NULL,
-                student_id integer NOT NULL,
-                company_id integer NOT NULL,
-                FOREIGN KEY (student_id) REFERENCES student(id),
-                FOREIGN KEY (company_id) REFERENCES company(id)
-            );
-            """
-        )
+/*
 
-        # Tags table
-        self.driver.execute_raw(
-            """
-            CREATE TABLE IF NOT EXISTS tag (
-                id integer PRIMARY KEY AUTOINCREMENT,
-                name varchar(50) NOT NULL
-            );
-            """
-        )
+Here is Parameterized Statements in Python with SQLite3
 
-    def get_students_view(self) -> List[StudentView]:
+We use these functions to insert data into the database:
+
+
+def get_students_view(self) -> List[StudentView]:
         """Gets all students.
 
         Returns:
@@ -406,3 +418,4 @@ class InternshipDatabase:
             """,
             tag.dict(),
         )
+*/

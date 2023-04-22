@@ -1,18 +1,18 @@
 CREATE TABLE IF NOT EXISTS student (
-    id integer PRIMARY KEY,
+    id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL,
     grade_point_average double NOT NULL,
     student_email varchar(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS company (
-    id integer PRIMARY KEY,
+    id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL,
     company_email varchar(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS internship (
-    id integer PRIMARY KEY,
+    id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL,
     begin_date datetime NOT NULL,
     end_date datetime NOT NULL,
@@ -23,6 +23,6 @@ CREATE TABLE IF NOT EXISTS internship (
 );
 
 CREATE TABLE IF NOT EXISTS tag (
-    id integer PRIMARY KEY,
+    id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL
 );

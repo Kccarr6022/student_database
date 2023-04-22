@@ -3,7 +3,6 @@ from typing import Dict, Optional, List
 
 
 class SQLDriver:
-
     conn: sqlite3.Connection
     cursor: sqlite3.Cursor
 
@@ -44,7 +43,7 @@ class SQLDriver:
         except sqlite3.Error as e:
             print("Problem executing sql:", e)
             self.conn.rollback()
-        
+
     def execute_statements(self, sql: str, params: List[Dict]):
         """Executes a SQL statement.
 
