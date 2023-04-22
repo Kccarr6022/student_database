@@ -44,22 +44,18 @@ class SQLDriver:
             print("Problem executing sql:", e)
             self.conn.rollback()
 
-    def execute_statements(self, sql: str, params: List[Dict]):
-        """Executes a SQL statement.
+    def execute_transaction(self, sql: List[str], params: List[Dict]):
+        """Executes a SQL transaction.
 
         Args:
             sql (str): The SQL statement to execute.
-            params (Dict): The parameters to use in the SQL statement.
+            params (List[Dict]): The parameters to use in the SQL statement.
         """
         try:
-            self.cursor.executemany(sql, params)
-            self.conn.commit()
+            self.cursor.execute("BEGIN TRANSACTION")
+            for sql, params in zip(sql, params):
+                self.cursor.execute(sql, params)
+            self.cursor.execute("COMMIT TRANSACTION")
         except sqlite3.Error as e:
             print("Problem executing sql:", e)
             self.conn.rollback()
-
-    def __del__(self):
-        self.conn.close()
-
-    class CreationError(Exception):
-        pass

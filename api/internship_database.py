@@ -1,6 +1,6 @@
 from typing import Optional, List
-from internship_data_classes import StudentView, Intern, Company, Student, Tag
-from sql_driver import SQLDriver
+from api.internship_data_classes import StudentView, Intern, Company, Student, Tag
+from api.sql_driver import SQLDriver
 
 
 class InternshipDatabase:
@@ -52,7 +52,7 @@ class InternshipDatabase:
                 id integer PRIMARY KEY AUTOINCREMENT,
                 name varchar(50) NOT NULL,
                 begin_date datetime NOT NULL,
-                end_date datetime NOT NULL,
+                end_date datetime NULLABLE,
                 student_id integer NOT NULL,
                 company_id integer NOT NULL,
                 FOREIGN KEY (student_id) REFERENCES student(id),
@@ -148,7 +148,8 @@ class InternshipDatabase:
         self.driver.execute_raw(sql)
         tuples = self.driver.cursor.fetchall()
         return [
-            Tag(**{field: tuple[i] for i, field in enumerate(Tag.__fields__.keys())})
+            Tag(**{field: tuple[i]
+                for i, field in enumerate(Tag.__fields__.keys())})
             for tuple in tuples
         ]
 
@@ -229,6 +230,44 @@ class InternshipDatabase:
         return Intern(
             **{field: tuple[i] for i, field in enumerate(Intern.__fields__.keys())}
         )
+    
+    def add_student_view(self, student_view: StudentView):
+        """Adds a student view.
+
+        Args:
+            student_view (StudentView): The student view to add.
+        """
+        self.driver.execute_statement("SELECT * FROM student")
+        new_student_id = self.driver.cursor.lastrowid
+        self.driver.execute_statement("SELECT * FROM company")
+        new_company_id = self.driver.cursor.lastrowid
+
+        self.driver.execute_transaction(
+            sql=[
+                "INSERT INTO student(name, grade_point_average, student_email) VALUES (:name, :grade_point_average, :student_email)",
+                "INSERT INTO company(name, company_email) VALUES (:name, :company_email);"
+                "INSERT INTO internship(name, begin_date, end_date, student_id) VALUES (:name, :begin_date, :end_date, :student_id);",
+            ],
+            params=[
+                {
+                    "name": student_view.name,
+                    "grade_point_average": student_view.grade_point_average,
+                    "student_email": student_view.student_email,
+                },
+                {
+                    "name": student_view.company_name,
+                    "company_email": student_view.company_email,
+                },
+                {
+                    "name": student_view.internship.name,
+                    "begin_date": student_view.internship.begin_date,
+                    "end_date": student_view.internship.end_date,
+                    "student_id": new_student_id,
+                    "company_id": new_company_id,
+                },
+            
+            ]
+        )
 
     def add_student(self, student: Student):
         """Adds a student.
@@ -252,8 +291,8 @@ class InternshipDatabase:
         """
         self.driver.execute_statement(
             """
-            INSERT INTO internship (id, name, begin_date, end_date, student_id, company_id)
-            VALUES (:id, :name, :begin_date, :end_date, :student_id, :company_id)
+            INSERT INTO internship (name, begin_date, end_date, student_id, company_id)
+            VALUES (:name, :begin_date, :end_date, :student_id, :company_id)
             """,
             intern.dict(),
         )
@@ -280,7 +319,7 @@ class InternshipDatabase:
         """
         self.driver.execute_statement(
             """
-            INSERT INTO companies (name, company_email)
+            INSERT INTO company (name, company_email)
             VALUES (:name, :company_email)
             """,
             company.dict(),

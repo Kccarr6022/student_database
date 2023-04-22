@@ -15,12 +15,12 @@ class TestInternshipDatabase:
     def internship_database(self, sql_driver: SQLDriver):
         return InternshipDatabase(sql_driver)
 
-    def test_get_student_view(
+    def test_get_students_view(
         self, internship_database: InternshipDatabase, sql_driver: SQLDriver
     ):
-        for test in range(10):
+        students = []
+        for test in range(1, 10):
             student_view = StudentView(
-                id=test,
                 name=f"test{test}",
                 grade_point_average=test,
                 student_email=f"{test}@fgcu.edu",
@@ -31,45 +31,40 @@ class TestInternshipDatabase:
                 company_email=f"{test}@company.com",
             )
 
-            student = Student(
-                id=student_view.id,
-                name=student_view.name,
-                grade_point_average=student_view.grade_point_average,
-                student_email=student_view.student_email,
+            sql_driver.execute_raw("SELECT * FROM student")
+            new_student_id = sql_driver.cursor.lastrowid
+            sql_driver.execute_raw("SELECT * FROM company")
+            new_company_id = sql_driver.cursor.lastrowid
+
+            sql_driver.execute_transaction(
+                sql=[
+                    "INSERT INTO student(name, grade_point_average, student_email) VALUES (:name, :grade_point_average, :student_email)",
+                    "INSERT INTO company(name, company_email) VALUES (:name, :company_email);",
+                    "INSERT INTO internship(name, begin_date, end_date, student_id, company_id) VALUES (:name, :begin_date, :end_date, :student_id, :company_id);",
+                ],
+                params=[
+                    {
+                        "name": student_view.name,
+                        "grade_point_average": student_view.grade_point_average,
+                        "student_email": student_view.student_email,
+                    },
+                    {
+                        "name": student_view.company_name,
+                        "company_email": student_view.company_email,
+                    },
+                    {
+                        "name": student_view.internship_name,
+                        "begin_date": student_view.begin_date,
+                        "end_date": student_view.end_date,
+                        "student_id": new_student_id,
+                        "company_id": new_company_id,
+                    },
+                ]
             )
 
-            company = Company(
-                id=test,
-                name=student_view.company_name,
-                company_email=student_view.company_email,
-            )
+            students.append(student_view)
 
-            intern = Intern(
-                id=test,
-                name=student_view.internship_name,
-                begin_date=str(datetime.now()),
-                end_date=None,
-                company_id=test,
-                student_id=test,
-            )
-
-            sql_driver.execute_statements(
-                """INSERT INTO student (id, name, grade_point_average, student_email) VALUES (:id, :name, :grade_point_average, :student_email)
-                INSERT INTO company (id, name, company_email) VALUES (:id, :name, :company_email)
-                INSERT INTO internship (id, name, begin_date, end_date, company_id, student_id) VALUES (:id, :name, :begin_date, :end_date, :company_id, :student_id)""",
-                [student.dict(), company.dict(), intern.dict()],
-            )
-
-            assert internship_database.get_student_view(student.id) == [
-                {
-                    "id": intern.id,
-                    "name": intern.name,
-                    "begin_date": intern.begin_date,
-                    "end_date": intern.end_date,
-                    "company_id": intern.company_id,
-                    "student_id": intern.student_id,
-                }
-            ]
+            assert internship_database.get_students_view() == students
 
     def test_get_interns(
         self, internship_database: InternshipDatabase, sql_driver: SQLDriver
@@ -164,7 +159,8 @@ class TestInternshipDatabase:
             assert internship_database.get_tags() == tags
 
     def test_add_intern(self, internship_database: InternshipDatabase):
-        for test in range(10):
+        interns = []
+        for test in range(1, 10):
             intern = Intern(
                 id=test,
                 name=f"test{test}",
@@ -174,13 +170,16 @@ class TestInternshipDatabase:
                 student_id=test,
             )
             internship_database.add_intern(intern)
+            interns.append(intern)
 
-            assert internship_database.get_interns() == [intern]
+            assert internship_database.get_interns() == interns
 
     def test_add_company(self, internship_database: InternshipDatabase):
-        for test in range(10):
+        companies = []
+        for test in range(1, 10):
             company = Company(id=test, name="test", company_email=f"{test}@")
 
             internship_database.add_company(company)
+            companies.append(company)
 
-            assert internship_database.get_companies() == [company]
+            assert internship_database.get_companies() == companies

@@ -3,7 +3,6 @@ from typing import Optional
 
 
 class StudentView(BaseModel):  # Dataclass
-    id: int
     name: str
     grade_point_average: float
     student_email: str

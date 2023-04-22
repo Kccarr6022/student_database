@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS internship (
     id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL,
     begin_date datetime NOT NULL,
-    end_date datetime NOT NULL,
+    end_date datetime,
     student_id integer NOT NULL,
     company_id integer NOT NULL,
     FOREIGN KEY (student_id) REFERENCES student(id),
@@ -26,3 +26,6 @@ CREATE TABLE IF NOT EXISTS tag (
     id integer PRIMARY KEY AUTOINCREMENT,
     name varchar(50) NOT NULL
 );
+
+
+
