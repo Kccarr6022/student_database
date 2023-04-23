@@ -1,6 +1,6 @@
 from typing import Optional, List
-from api.internship_data_classes import StudentView, Intern, Company, Student, Tag
-from api.sql_driver import SQLDriver
+from internship_data_classes import StudentView, Intern, Company, Student, Tag
+from sql_driver import SQLDriver
 
 
 class InternshipDatabase:
@@ -26,10 +26,10 @@ class InternshipDatabase:
         self.driver.execute_raw(
             """
             CREATE TABLE IF NOT EXISTS student (
-                id integer PRIMARY KEY AUTOINCREMENT,
-                name varchar(50) NOT NULL,
-                grade_point_average double NOT NULL,
-                student_email varchar(50) NOT NULL
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) NOT NULL,
+                grade_point_average FLOAT NOT NULL,
+                student_email VARCHAR(50) NOT NULL
             );
             """
         )
@@ -51,8 +51,8 @@ class InternshipDatabase:
             CREATE TABLE IF NOT EXISTS internship (
                 id integer PRIMARY KEY AUTOINCREMENT,
                 name varchar(50) NOT NULL,
-                begin_date datetime NOT NULL,
-                end_date datetime NULLABLE,
+                begin_date date NOT NULL,
+                end_date date,
                 student_id integer NOT NULL,
                 company_id integer NOT NULL,
                 FOREIGN KEY (student_id) REFERENCES student(id),
@@ -71,7 +71,7 @@ class InternshipDatabase:
             """
         )
 
-    def get_students_view(self) -> List[StudentView]:
+    def get_student_interns(self) -> List[StudentView]:
         """Gets all students.
 
         Returns:
@@ -79,7 +79,11 @@ class InternshipDatabase:
         """
         sql = "SELECT * FROM student_view"
         self.driver.execute_raw(sql)
-        tuples = self.driver.cursor.fetchall()
+        tuples = self.driver.cursor.fetchall(
+        )
+        print(tuples)
+        # Remove the id field from the tuples
+        tuples = [tuple[1:] for tuple in tuples]
         return [
             StudentView(
                 **{
@@ -231,37 +235,39 @@ class InternshipDatabase:
             **{field: tuple[i] for i, field in enumerate(Intern.__fields__.keys())}
         )
     
-    def add_student_view(self, student_view: StudentView):
+    def add_student_intern(self, student_view: StudentView):
         """Adds a student view.
 
         Args:
             student_view (StudentView): The student view to add.
         """
-        self.driver.execute_statement("SELECT * FROM student")
-        new_student_id = self.driver.cursor.lastrowid
-        self.driver.execute_statement("SELECT * FROM company")
-        new_company_id = self.driver.cursor.lastrowid
+        self.driver.execute_raw("SELECT * FROM student")
+        new_student_id = self.driver.cursor.lastrowid + 1
+        self.driver.execute_raw("SELECT * FROM company")
+        new_company_id = self.driver.cursor.lastrowid + 1
 
         self.driver.execute_transaction(
             sql=[
-                "INSERT INTO student(name, grade_point_average, student_email) VALUES (:name, :grade_point_average, :student_email)",
-                "INSERT INTO company(name, company_email) VALUES (:name, :company_email);"
-                "INSERT INTO internship(name, begin_date, end_date, student_id) VALUES (:name, :begin_date, :end_date, :student_id);",
+                "INSERT INTO student(id, name, grade_point_average, student_email) VALUES (:id, :name, :grade_point_average, :student_email)",
+                "INSERT INTO company(id, name, company_email) VALUES (:id, :name, :company_email);",
+                "INSERT INTO internship(name, begin_date, end_date, student_id, company_id) VALUES (:name, :begin_date, :end_date, :student_id, :company_id);",
             ],
             params=[
                 {
+                    "id": new_student_id,
                     "name": student_view.name,
                     "grade_point_average": student_view.grade_point_average,
                     "student_email": student_view.student_email,
                 },
                 {
+                    "id": new_company_id,
                     "name": student_view.company_name,
                     "company_email": student_view.company_email,
                 },
                 {
-                    "name": student_view.internship.name,
-                    "begin_date": student_view.internship.begin_date,
-                    "end_date": student_view.internship.end_date,
+                    "name": student_view.internship_name,
+                    "begin_date": student_view.begin_date,
+                    "end_date": student_view.end_date,
                     "student_id": new_student_id,
                     "company_id": new_company_id,
                 },
@@ -323,6 +329,39 @@ class InternshipDatabase:
             VALUES (:name, :company_email)
             """,
             company.dict(),
+        )
+
+    def update_student_intern(self, student_view: StudentView):
+        """Updates a student view.
+
+        Args:
+            student_view (StudentView): The student view to update.
+        """
+        self.driver.execute_transaction(
+            sql=[
+                "UPDATE students SET name = :name, grade_point_average = :grade_point_average, student_email = :student_email WHERE id = :id",
+                "UPDATE company SET name = :name, company_email = :company_email WHERE id = :id",
+                "UPDATE internship SET name = :name, begin_date = :begin_date, end_date = :end_date WHERE id = :id",
+            ],
+            params=[
+                {
+                    "id": student_view.student_id,
+                    "name": student_view.name,
+                    "grade_point_average": student_view.grade_point_average,
+                    "student_email": student_view.student_email,
+                },
+                {
+                    "id": student_view.company_id,
+                    "name": student_view.company_name,
+                    "company_email": student_view.company_email,
+                },
+                {
+                    "id": student_view.internship_id,
+                    "name": student_view.internship_name,
+                    "begin_date": student_view.begin_date,
+                    "end_date": student_view.end_date,
+                },
+            ],
         )
 
     def update_intern(self, intern: Intern):

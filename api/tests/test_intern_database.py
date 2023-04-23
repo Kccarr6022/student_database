@@ -7,14 +7,14 @@ import pytest
 
 
 class TestInternshipDatabase:
-    @pytest.fixture
+    @pytest.fixture(autouse=True, scope="function")
     def sql_driver(self):
         return SQLDriver(in_memory=True)
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True, scope="function")
     def internship_database(self, sql_driver: SQLDriver):
         return InternshipDatabase(sql_driver)
-
+    
     def test_get_students_view(
         self, internship_database: InternshipDatabase, sql_driver: SQLDriver
     ):
@@ -22,33 +22,38 @@ class TestInternshipDatabase:
         for test in range(1, 10):
             student_view = StudentView(
                 name=f"test{test}",
-                grade_point_average=test,
+                grade_point_average=float(3.510),
                 student_email=f"{test}@fgcu.edu",
                 internship_name=f"test{test}",
-                begin_date=str(datetime(year=2000, month=test, day=test)),
+                begin_date=datetime(year=2000, month=test, day=test).date(),
                 end_date=None,
                 company_name=f"test{test}",
                 company_email=f"{test}@company.com",
             )
 
             sql_driver.execute_raw("SELECT * FROM student")
-            new_student_id = sql_driver.cursor.lastrowid
+            new_student_id = sql_driver.cursor.lastrowid + 1
             sql_driver.execute_raw("SELECT * FROM company")
-            new_company_id = sql_driver.cursor.lastrowid
+            new_company_id = sql_driver.cursor.lastrowid + 1
+
+            print("new_student_id", new_student_id)
+            print("new_company_id", new_company_id)
 
             sql_driver.execute_transaction(
                 sql=[
-                    "INSERT INTO student(name, grade_point_average, student_email) VALUES (:name, :grade_point_average, :student_email)",
-                    "INSERT INTO company(name, company_email) VALUES (:name, :company_email);",
+                    "INSERT INTO student(id, name, grade_point_average, student_email) VALUES (:id, :name, :grade_point_average, :student_email)",
+                    "INSERT INTO company(id, name, company_email) VALUES (:id, :name, :company_email);",
                     "INSERT INTO internship(name, begin_date, end_date, student_id, company_id) VALUES (:name, :begin_date, :end_date, :student_id, :company_id);",
                 ],
                 params=[
                     {
+                        "id": new_student_id,
                         "name": student_view.name,
                         "grade_point_average": student_view.grade_point_average,
                         "student_email": student_view.student_email,
                     },
                     {
+                        "id": new_company_id,
                         "name": student_view.company_name,
                         "company_email": student_view.company_email,
                     },
@@ -64,7 +69,12 @@ class TestInternshipDatabase:
 
             students.append(student_view)
 
-            assert internship_database.get_students_view() == students
+            print(
+                "internship_database.get_students_view()",
+                internship_database.get_student_interns(),
+            )
+
+            assert internship_database.get_student_interns() == students
 
     def test_get_interns(
         self, internship_database: InternshipDatabase, sql_driver: SQLDriver
@@ -76,8 +86,8 @@ class TestInternshipDatabase:
             intern = Intern(
                 id=test,
                 name=f"test{test}",
-                begin_date=str(datetime.now()),
-                end_date=str(datetime.now()),
+                begin_date=datetime.now().date(),
+                end_date=datetime.now().date(),
                 company_id=test,
                 student_id=test,
             )
@@ -87,6 +97,10 @@ class TestInternshipDatabase:
             sql_driver.execute_statement(
                 "INSERT INTO internship (id, name, begin_date, end_date, company_id, student_id) VALUES (:id, :name, :begin_date, :end_date, :company_id, :student_id)",
                 intern.dict(),
+            )
+
+            print(
+                "internship_database.get_interns()", internship_database.get_interns()
             )
 
             assert internship_database.get_interns() == interns
@@ -164,8 +178,8 @@ class TestInternshipDatabase:
             intern = Intern(
                 id=test,
                 name=f"test{test}",
-                begin_date=str(datetime.now()),
-                end_date=str(datetime.now()),
+                begin_date=datetime.now().date(),
+                end_date=datetime.now().date(),
                 company_id=test,
                 student_id=test,
             )
@@ -183,3 +197,24 @@ class TestInternshipDatabase:
             companies.append(company)
 
             assert internship_database.get_companies() == companies
+
+    def test_add_student_internship(self, internship_database: InternshipDatabase):
+        student_internships = []
+
+        for test in range(1, 10):
+            student_internship = StudentView(
+                name=f"test{test}",
+                grade_point_average=test,
+                student_email=f"{test}@eagle.fgcu.edu",
+                internship_name=f"test{test}",
+                begin_date=datetime.now().date(),
+                end_date=datetime.now().date(),
+                company_name=f"test{test}",
+                company_email=f"{test}@company.com"
+            )
+
+            internship_database.add_student_intern(student_internship)
+
+            student_internships.append(student_internship)
+
+            assert internship_database.get_student_interns() == student_internships
